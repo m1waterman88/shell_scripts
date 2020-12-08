@@ -1,0 +1,10 @@
+#!/bin/sh
+
+echo "Please enter your name: "
+read name
+
+if [[ -n $name && $name != "\n" ]]; then
+	echo -e "Hello, $name!\n"
+else
+	echo "Sorry -- I couldn't hear you."
+fi

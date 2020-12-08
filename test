@@ -1,0 +1,11 @@
+#!/bin/bash
+fname=john
+john=thomas
+
+# echos john
+# echo ${fname}
+
+# echos thomas
+# indirect expansion
+echo ${!fname} # thomas
+

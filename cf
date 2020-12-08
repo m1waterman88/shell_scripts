@@ -1,0 +1,10 @@
+#!/bin/bash
+
+declare -a args
+args=( start stop restart status wsconfig )
+
+if [[ -n $1 && "${args[@]}" =~ "${1}" ]]; then
+	sudo ~/bin/ColdFusion/cfusion/bin/coldfusion $1
+else
+	echo "Pass in a valid argument: cf [start|stop|restart|status|wsconfig]"
+fi
