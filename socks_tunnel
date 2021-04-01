@@ -1,0 +1,19 @@
+#!/usr/bin/bash
+
+# original values for the scripts replaced with "VALUE"
+# for obsfucation, in addition the script name being changed.
+
+declare -a args
+# args=( VALUE VALUE )
+
+if [[ -n $1 && "${args[@]}" =~ "${1}" ]]; then
+        # TODO:
+        # ip=$(curl -4 https://icanhazip.com --no-progress-meter)
+        # echo Whitelisting your public IP: $ip
+
+	echo Building SOCKS tunnel to TOR VALUE on local 20042
+        echo $(ssh -N -D 20042 -o ServerAliveInterval=30 -o TCPKeepAlive=yes VALUE@VALUE.$1.VALUE&)
+else
+	echo "Pass in a valid argument: VALUE [VALUE|VALUE]"
+fi
+

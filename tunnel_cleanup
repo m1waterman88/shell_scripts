@@ -1,0 +1,5 @@
+#!/usr/bin/bash
+
+echo 'Cleaning up stale tunnels...'
+echo `ps -ef | grep ssh | grep -v grep | grep "\-N" | awk '{print $2}' | xargs -n1 kill`
+echo 'Done.'
