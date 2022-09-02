@@ -1,0 +1,35 @@
+#!/bin/bash
+
+###################################################################################
+# This script accepts one argument, determining which VPN to connect to via
+# OpenConnect. Passwords and TOTP tokens are requested via STDIN. Keep the shell
+# open to stay connected. To terminate the session, simply keyboard interrupt
+# (ctrl+c).
+#
+# Arguments:
+#   * primary, p - connect to the primary VPN
+#   * backup, b  - connect to the backup VPN
+###################################################################################
+
+declare -a args
+args=( primary p backup b )
+
+if [[ -n $1 && "${args[@]}" =~ "${1}" ]]; then
+	if [[ $1 == 'primary' || $1 == 'p' ]]; then
+		# Replace these variables with your information or export environment variables from your profile
+		sudo openconnect $PRIMARY_VPN -u $USER
+		exit 0
+	fi
+
+	if [[ $1 == 'backup' || $1 == 'b' ]]; then
+		# Replace these variables with your information or export environment variables from your profile
+		sudo openconnect $BACKUP_VPN -u $USER
+		exit 0
+	fi
+
+	echo "Unhandled argument error: check the script"
+	exit 1
+fi
+
+echo "Pass in a valid argument: vpn_wrapper [primary | p | backup | b]"
+exit 1
