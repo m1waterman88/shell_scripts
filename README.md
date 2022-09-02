@@ -1,8 +1,3 @@
 # Shell Scripts
 
-- cf
-- fixwwwperms
-- fixwwwtypes
-- ssh_script
-- stndin_request
-- test
+Some eclectic shell scripts to help along the way.
