@@ -16,28 +16,28 @@ fi
 # Report the start time to a logfile.
 echo $(date -u)": System provisioning started." >> /opt/$USER/build_workstation.log
 
-function wait_on_apt_lock()
-{
-    until ! lsof -t /var/cache/apt/archives/lock /var/lib/apt/lists/lock /var/lib/dpkg/lock >/dev/null 2>&1
-    do
-        echo "Waiting 3 for apt lock currently held by another process."
-        sleep 3
-    done
+# apt helper functions - https://github.com/vultr/vultr-marketplace/blob/main/helper-scripts/vultr-helper.sh
+function wait_on_apt_lock() {
+	until ! lsof -t /var/cache/apt/archives/lock /var/lib/apt/lists/lock /var/lib/dpkg/lock >/dev/null 2>&1
+	do
+		echo "Waiting 3 for apt lock currently held by another process."
+		sleep 3
+	done
 }
 
 function apt_safe() {
 	wait_on_apt_lock
-	sudo apt install -y $@
+	sudo apt install -y "$@"
 }
 
 function apt_update_safe() {
 	wait_on_apt_lock
-	sudo apt update
+	sudo apt update -y
 }
 
 function apt_upgrade_safe() {
 	wait_on_apt_lock
-	sudo apt upgrade -y
+	DEBIAN_FRONTEND=noninteractive apt upgrade -y
 }
 
 function apt_clean_safe() {
@@ -61,7 +61,7 @@ hostnamectl set-hostname "vultr-nhql3"
 
 # profile, bashrc, and bash_aliases additions/changes
 cat .profile >> ~/.profile
-# TODO: sed for bashrc (PS1)?
+# TODO: sed for bashrc (PS1)
 cat .bash_aliases > ~/.bash_aliases
 . ~/.profile
 
@@ -81,18 +81,15 @@ apt_safe \
 	gpg \
 	htop \
 	ipcalc \
-	libreoffice \
-	locate \
+	jq \
 	lsb-release \
 	mysql-client-8.0 \
-	neofetch \
 	nmap \
 	peek \
 	python3-pip \
-	python3-venv \
-	tree \
 	vim \
 	wget \
+	wireshark \
 	whois
 
 # Source /etc/os-release to get os-release values in variables
@@ -106,7 +103,6 @@ if [ $ID == 'pop' ]; then
 	FLATPACK_PACKAGES=(
 		com.jgraph.drawio.desktop
 		org.signal.Signal
-		# com.spotify.Client
 	)
 
 	for PACKAGE in ${FLATPACK_PACKAGES[@]}; do
@@ -120,6 +116,8 @@ else if [ $ID == 'ubuntu' ]; then
 	sudo snap install \
 		drawio \
 		signal-desktop
+
+	cp $BASE_DIR/shell_scripts/remove_disabled_snaps ~/bin/shell_scripts/remove_disabled_snaps
 else
 	echo "WARNING: Unknown operating system: $ID. pop or ubuntu expected."
 fi
@@ -129,9 +127,10 @@ sudo ufw enable
 sudo ufw allow from 172.16.0.2 to any port 9003
 
 # VPN
+# TODO: Update VPN information when directions are more mature: https://vultr.atlassian.net/wiki/spaces/CORPIT/pages/58064905/Global+Protect+VPN+on+Ubuntu+Linux
 apt_update_safe
-apt_safe openconnect
-mv $BASE_DIR/vpn_wrapper ~/bin/shell_scripts/vpn_wrapper
+apt_safe libqt5webkit5
+cp $BASE_DIR/shell_scripts/vultr_vpn ~/bin/shell_scripts/vultr_vpn
 
 # git
 git config --global user.name "Michael Waterman"
@@ -140,22 +139,22 @@ git config --global pull.rebase true
 git config --global core.editor vim
 
 mkdir -p ~/src/git/hooks
-copy $BASE_DIR/prepare-commit-msg ~/src/git/hooks
+cp $BASE_DIR/prepare-commit-msg ~/src/git/hooks
 git config --global core.hooksPath /home/$USER/src/git/hooks
 chmod 764 ~/src/git/hooks/prepare-commit-msg
 
 # PHP
-PHP_VERSION="8.1"
+PHP_VERSION="php8.1"
 apt_update_safe
 apt_safe \
-	php$PHP_VERSION \
-	php$PHP_VERSION-cli \
-	php$PHP_VERSION-common \
-	php$PHP_VERSION-curl \
-	php$PHP_VERSION-gmp \
-	php$PHP_VERSION-mbstring \
-	php$PHP_VERSION-mysql \
-	php$PHP_VERSION-xml
+	$PHP_VERSION \
+	$PHP_VERSION-cli \
+	$PHP_VERSION-common \
+	$PHP_VERSION-curl \
+	$PHP_VERSION-gmp \
+	$PHP_VERSION-mbstring \
+	$PHP_VERSION-mysql \
+	$PHP_VERSION-xml
 
 # Composer - https://getcomposer.org/doc/faqs/how-to-install-composer-programmatically.md
 EXPECTED_CHECKSUM="$(php -r 'copy("https://composer.github.io/installer.sig", "php://stdout");')"
@@ -171,6 +170,9 @@ fi
 
 rm composer-setup.php
 composer global require "squizlabs/php_codesniffer=*"
+
+# PHPUnit since some projects require the local binary
+composer global require --dev phpunit/phpunit
 
 # Docker and Docker Compose - https://docs.docker.com/engine/install/#server
 sudo mkdir -p /etc/apt/keyrings
@@ -209,7 +211,7 @@ apt_update_safe
 apt_safe code
 
 # Python
-python3 -m pip install flake8 pydocstyle pipdeptree --user
+python3 -m pip install pydocstyle pipdeptree Jinja2 --user
 
 # DBeaver - https://dbeaver.io/download/
 sudo  wget -O /usr/share/keyrings/dbeaver.gpg.key https://dbeaver.io/debs/dbeaver.gpg.key
@@ -221,8 +223,8 @@ apt_safe dbeaver-ce
 sudo curl https://apt.releases.teleport.dev/gpg \
   -o /usr/share/keyrings/teleport-archive-keyring.asc
 
-# need to update manually for each major release
-TELEPORT_VERSION='v10'
+# Need to update manually for each major release
+TELEPORT_VERSION='v15'
 
 # Uses source /etc/os-release
 echo "deb [signed-by=/usr/share/keyrings/teleport-archive-keyring.asc] \
@@ -230,6 +232,9 @@ echo "deb [signed-by=/usr/share/keyrings/teleport-archive-keyring.asc] \
 | sudo tee /etc/apt/sources.list.d/teleport.list > /dev/null
 apt_update_safe
 apt_safe teleport
+
+# Add a script that uses Teleport
+cp $BASE_DIR/shell_scripts/sync_mirrors ~/bin/shell_scripts/sync_mirrors
 
 # Joplin - Create an install/update script and then install
 mkdir ~/.joplin

@@ -13,3 +13,7 @@
 	* Then remove the old GPG key from GitLab if applicable
 * Import bookmarks to Brave
 * [Install extensions](https://chrome.google.com/webstore/category/extensions)
+	* Bitwarden
+	* GNOME Shell integration?
+	* Okta Browser Plugin
+	* Xdebug helper
